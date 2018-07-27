@@ -2,15 +2,9 @@ var config = require('./config');
 var express = require('express');
 var path = require('path');
 var app = express();
-
-const dashboardRouter = require("./routes/dashboard");
-const publicRouter = require("./routes/public");
-const usersRouter = require("./routes/users");
-
-
+var fetch = require("node-fetch");
 const session = require("express-session");
 const auth = require("./auth");
-const middleware = require("./middleware");
 
 var router = express.Router();
 
@@ -22,57 +16,40 @@ app.use(session({
 
 app.use(express.static(__dirname + './../')); //serves the index.html
 
-app.use(auth.oidc.router);
-// app.use(middleware.addUser);
+app.get('/login', (req, res) => {
+  console.log('/login', req.sessionID);
+  res.redirect(`${auth.orgUrl}/oauth2/default/v1/authorize?client_id=${auth.client_id}&response_type=code&redirect_uri=${auth.redirect_uri}&scope=${auth.scope}&state=state-${req.sessionID}`)
+ })
+ 
+ app.get('/authorization-code/callback', async (req, res) => {
+ 
+  let response = await(
+    await fetch(`${auth.orgUrl}/oauth2/default/v1/token?code=${req.query.code}&state=${req.query.state}&client_id=${auth.client_id}&client_secret=${auth.client_secret}&grant_type=authorization_code&redirect_uri=${auth.redirect_uri}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'accept': "application/json",
+        },
+      }
+    )
+  ).json();
 
-// app.use("/", publicRouter);
-// app.use("/dashboard", middleware.loginRequired, dashboardRouter);
-// app.use("/users", usersRouter);
+  session.access_token = response.access_token;
+  session.id_token = response.id_token;
+  
+  let pathToIndex = path.resolve(__dirname, './../index.html');
+  res.sendFile(pathToIndex);
+ });
 
-app.get('/user-info', (req, res) => {
-  // console.log('/user-info');
-  // console.log(req.session);
-  // console.log(user);
-  res.send({user: user});
-});
+ app.get('/tokens', (req, res) => {
+   console.log('/tokens');
+   console.log(session.access_token);
 
-let user = null;
-app.get('/redirect', (req, res) => {
-  console.log('/redirect');
-  // console.log(res);
-  // console.log(req);
-  console.log(req.session);
-  // user = req.session.passport.user;
-  const pathToIndex = path.resolve(__dirname + './../index.html'); 
-  res.sendFile(pathToIndex, (err) => {
-    if (err) {
-      res.status(500).send(err)
-    }
-  })
-});
+   res.send({
+     id_token: session.id_token,
+     access_token: session.access_token
+   });
+ });
 
-app.get('/test', (req, res) => {
-  console.log('/test');
-  console.log(res);
-  let url = `${auth.oktaConfig.orgUrl}/oauth2/default/v1/authorize?client_id=${auth.oktaConfig.client_id}&response_type=code&scope=openid&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fusers%2Fcallback&state=27f21648-e08f-4e57-961c-1fd7dc46acc1`;
-  console.log(url);
-  res.redirect(url);
-})
-
-app.get('/users/callback', (req, res) => {
-  console.log('/redirect');
-  // console.log(res);
-  // console.log(req);
-  console.log(req.session);
-  // user = req.session.passport.user;
-  const pathToIndex = path.resolve(__dirname + './../index.html'); 
-  res.sendFile(pathToIndex, (err) => {
-    if (err) {
-      res.status(500).send(err)
-    }
-  })
-})
-
-auth.oidc.on('ready', () => {
-  app.listen(config.port, () => console.log(`listening on port ${config.port}`));
-});
+ app.listen(config.port, () => console.log(`Listening on port ${config.port}`));
