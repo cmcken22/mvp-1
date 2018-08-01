@@ -11,7 +11,17 @@ class App extends Component {
   }
   
   componentDidMount() {
-    fetch('/tokens').then(res => res.json()).then(json => {
+    // fetch('/tokens').then(res => res.json()).then(json => {
+    //   console.log(json);
+    //   this.setState({
+    //     id_token: json.id_token,
+    //     access_token: json.access_token
+    //   });
+    // });
+  }
+
+  checkSession = () => {
+    fetch('/check-session').then(res => res.json()).then(json => {
       console.log(json);
       this.setState({
         id_token: json.id_token,
@@ -41,6 +51,7 @@ class App extends Component {
             <p style={{margin: '5px 0px 0px 0px'}}>&#x7D;</p>
           </div>
         : null}
+        <button onClick={this.checkSession}>Check Session</button>
       </div>
     );
   }
