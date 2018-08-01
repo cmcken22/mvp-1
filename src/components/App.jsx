@@ -23,10 +23,10 @@ class App extends Component {
   checkSession = () => {
     fetch('/check-session').then(res => res.json()).then(json => {
       console.log(json);
-      this.setState({
-        id_token: json.id_token,
-        access_token: json.access_token
-      });
+      // this.setState({
+      //   id_token: json.id_token,
+      //   access_token: json.access_token
+      // });
     });
   }
 
