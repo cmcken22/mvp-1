@@ -6,6 +6,9 @@ var fetch = require("node-fetch");
 const session = require("express-session");
 const auth = require("./auth");
 
+let sandbox = true;
+const okta = sandbox ? auth.ellisDon_oktaConfig : auth.oktaConfig;
+
 var router = express.Router();
 
 app.use(session({
@@ -18,13 +21,13 @@ app.use(express.static(__dirname + './../')); //serves the index.html
 
 app.get('/login', (req, res) => {
   console.log('/login', req.sessionID);
-  res.redirect(`${auth.orgUrl}/oauth2/default/v1/authorize?client_id=${auth.client_id}&response_type=code&redirect_uri=${auth.redirect_uri}&scope=${auth.scope}&state=state-${req.sessionID}`)
- })
+  res.redirect(`${okta.orgUrl}/oauth2/default/v1/authorize?client_id=${okta.client_id}&response_type=code&redirect_uri=${okta.redirect_uri}&scope=${okta.scope}&state=state-${req.sessionID}`)
+ });
  
  app.get('/authorization-code/callback', async (req, res) => {
  
   let response = await(
-    await fetch(`${auth.orgUrl}/oauth2/default/v1/token?code=${req.query.code}&state=${req.query.state}&client_id=${auth.client_id}&client_secret=${auth.client_secret}&grant_type=authorization_code&redirect_uri=${auth.redirect_uri}`,
+    await fetch(`${okta.orgUrl}/oauth2/default/v1/token?code=${req.query.code}&state=${req.query.state}&client_id=${okta.client_id}&client_secret=${okta.client_secret}&grant_type=authorization_code&redirect_uri=${okta.redirect_uri}`,
       {
         method: 'POST',
         headers: {
@@ -36,8 +39,6 @@ app.get('/login', (req, res) => {
   ).json();
 
   session.access_token = response.access_token;
-  session.id_token = response.id_token;
-  
   let pathToIndex = path.resolve(__dirname, './../index.html');
   res.sendFile(pathToIndex);
  });
@@ -45,9 +46,7 @@ app.get('/login', (req, res) => {
  app.get('/tokens', (req, res) => {
    console.log('/tokens');
    console.log(session.access_token);
-
    res.send({
-     id_token: session.id_token,
      access_token: session.access_token
    });
  });
