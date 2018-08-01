@@ -20,12 +20,28 @@ class App extends Component {
     });
   }
 
+  handleLogin = () => {
+    console.log(this.inputRef.value);
+    fetch("/login",
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: "POST",
+        body: JSON.stringify({ username: this.inputRef.value })
+      })
+  }
+
   render() {
 
     return (
       <div>
         {!this.state.access_token ?
-          <a href="/login"><h1>Login</h1></a>
+          <div>
+            <a onClick={this.handleLogin}><h1>Login</h1></a>
+            <input type="text" ref={r => this.inputRef = r}/>
+          </div>
         : null}
         <br/>
         {this.state.access_token ? 

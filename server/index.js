@@ -21,7 +21,8 @@ app.use(express.static(__dirname + './../')); //serves the index.html
 
 app.get('/login', (req, res) => {
   console.log('/login', req.sessionID);
-  res.redirect(`${okta.orgUrl}/oauth2/default/v1/authorize?client_id=${okta.client_id}&response_type=code&redirect_uri=${okta.redirect_uri}&scope=${okta.scope}&state=state-${req.sessionID}`)
+  console.log(res);
+  // res.redirect(`${okta.orgUrl}/oauth2/default/v1/authorize?client_id=${okta.client_id}&response_type=code&redirect_uri=${okta.redirect_uri}&scope=${okta.scope}&state=state-${req.sessionID}`)
  });
  
  app.get('/authorization-code/callback', async (req, res) => {
