@@ -12,9 +12,9 @@ class App extends Component {
   }
   
   componentDidMount() {
-    this.checkSession().then(res => {
-      console.log(res);
-      this.setState({sessionActive: res});
+    this.checkSession().then(status => {
+      console.log(status);
+      this.setState({sessionActive: status});
     });
   }
 
