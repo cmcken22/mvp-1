@@ -5,6 +5,7 @@ var app = express();
 var fetch = require("node-fetch");
 const session = require("express-session");
 const auth = require("./auth");
+const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
 let sandbox = !true;
@@ -12,6 +13,7 @@ const okta = sandbox ? auth.ellisDon_oktaConfig : auth.oktaConfig;
 
 var router = express.Router();
 
+app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static(__dirname + './../')); //serves the index.html
 
@@ -49,13 +51,15 @@ app.get('/login', async (req, res) => {
     }
   )).json();
   console.log('sessionId:', sessionResponse.id);
-  sessionID = sessionResponse.id;
+  res.cookie('sessionId', sessionResponse.id);
 
   res.redirect('/');
 });
 
-app.get('/check-session', async (req, res) => {
-  let sessionResponse = await (await fetch(`${okta.baseUrl}/api/v1/sessions/102hfrWB_A_S6eXMcM2U5bSew`,
+app.post('/check-session', async (req, res) => {
+  console.log('/check-session', req.body.sessionId);
+  
+  let sessionResponse = await (await fetch(`${okta.baseUrl}/api/v1/sessions/${req.body.sessionId}`,
     {
       method: 'GET',
       headers: {
@@ -66,6 +70,12 @@ app.get('/check-session', async (req, res) => {
     }
   )).json();
   console.log(sessionResponse);
+
+  if(sessionResponse.id === req.body.sessionId && sessionResponse.status === 'ACTIVE') {
+    res.send({message: 'session active', active: true});
+  } else {
+    res.send({message: 'session expired', active: false});
+  } 
 });
 
 

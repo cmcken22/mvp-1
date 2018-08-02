@@ -6,52 +6,54 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      access_token: null
+      access_token: null,
+      sessionActive: false
     }
   }
   
   componentDidMount() {
-    // fetch('/tokens').then(res => res.json()).then(json => {
-    //   console.log(json);
-    //   this.setState({
-    //     id_token: json.id_token,
-    //     access_token: json.access_token
-    //   });
-    // });
+    this.checkSession().then(res => {
+      console.log(res);
+      this.setState({sessionActive: res});
+    });
   }
 
-  checkSession = () => {
-    fetch('/check-session').then(res => res.json()).then(json => {
-      console.log(json);
-      // this.setState({
-      //   id_token: json.id_token,
-      //   access_token: json.access_token
-      // });
-    });
+  getCookie = (name) => {
+    var value = "; " + document.cookie;
+    var parts = value.split("; " + name + "=");
+    if (parts.length == 2) return parts.pop().split(";").shift();
+  }
+
+  checkSession = async () => {
+    let sessionId = this.getCookie('sessionId');
+    let sessionResponse = await(await fetch(`/check-session`,
+      {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({"sessionId": sessionId})
+      }
+    )).json();
+
+    console.log(sessionResponse);
+    return sessionResponse.active;
   }
 
   render() {
 
     return (
       <div>
-        {!this.state.access_token ?
+        {!this.state.sessionActive ?
           <a href="/login"><h1>Login</h1></a>
-        : null}
-        <br/>
-        {this.state.access_token ? 
+        :
           <div>
-            <p style={{margin: '0px 0px 5px 0px'}}>access_token: &#123;</p>
-            <p style={{
-              margin: '0px 15px 0px 15px',
-              overflow: 'hidden',
-              wordBreak: 'break-all'
-            }}>
-              {this.state.access_token}
-            </p>
-            <p style={{margin: '5px 0px 0px 0px'}}>&#x7D;</p>
+            <a href="/logout"><h1>Logout</h1></a>
+            <br/>
+            <button onClick={this.checkSession}>Check Session</button>
           </div>
-        : null}
-        <button onClick={this.checkSession}>Check Session</button>
+        }
       </div>
     );
   }
