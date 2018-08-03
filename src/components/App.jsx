@@ -1,61 +1,78 @@
-import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from 'react-router-dom';
+import React, { Component } from 'react';
 import fetch from 'node-fetch';
+
+const client_id      = "0oafsm2mlaNbnoSq40h7"
+const client_secret  = "rHJyWHf7_0pM-qe_Hvw4RD1XhT2LlQtgyy33ElSa"
+const apikey         = "00Aw3z05lA4zZfuKckAMdpZrQ5AJ0StqPXG5CN0tP0"
+const baseUrl        = 'https://dev-957770.oktapreview.com'
+const redirect_uri   = "http://localhost:8080/authorization-code/callback"
+
+const OktaAuth = require('@okta/okta-auth-js');
+const config = {
+  url: `${baseUrl}`,
+  clientId: `${client_id}`,
+  redirectUri: `${redirect_uri}`,
+}
+const authClient = new OktaAuth(config)
 
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      access_token: null,
-      sessionActive: false
-    }
   }
-  
-  componentDidMount() {
-    this.checkSession().then(status => {
-      console.log(status);
-      this.setState({sessionActive: status});
+
+  login = () => {
+    authClient.signIn({
+      username: 'conner.mckenna94@gmail.com',
+      password: 'Ellisdon2017'
+    })
+    .then( (transaction) => {
+      if (transaction.status == 'SUCCESS') {
+        authClient.session.setCookieAndRedirect(transaction.sessionToken, `${baseUrl}/oauth2/default/v1/authorize?client_id=${client_id}&state=state-1234-1234-1243&response_type=code&scope=openid&redirect_uri=${redirect_uri}`);
+      } else {
+        console.log('login failed')
+      }
+    })
+  }
+
+  logout = () => {
+    authClient.signOut()
+    .then(function() {
+      console.log('successfully logged out');
+    })
+    .fail(function(err) {
+      console.error(err);
+    });
+
+  }
+
+  checkForOktaSession = () => {
+    authClient.session.get()
+    .then( async (session) => {
+      console.log(session)
+    })
+    .catch( (err) => {
+      console.log(err)
     });
   }
 
-  getCookie = (name) => {
-    var value = "; " + document.cookie;
-    var parts = value.split("; " + name + "=");
-    if (parts.length == 2) return parts.pop().split(";").shift();
-  }
-
-  checkSession = async () => {
-    let sessionId = this.getCookie('sessionId');
-    let sessionResponse = await(await fetch(`/check-session`,
-      {
-        method: 'POST',
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({"sessionId": sessionId})
-      }
-    )).json();
-
-    console.log(sessionResponse);
-    return sessionResponse.active;
+  checkExpressSession = () => {
+    // this will log the current express session to the terminal
+    fetch('/check', {credentials: 'same-origin'})
   }
 
   render() {
-
     return (
       <div>
-        {!this.state.sessionActive ?
-          <a href="/login"><h1>Login</h1></a>
-        :
-          <div>
-            <a href="/logout"><h1>Logout</h1></a>
-            <br/>
-            <button onClick={this.checkSession}>Check Session</button>
-          </div>
-        }
+        <div>
+
+          <button onClick={this.login}>LOGIN</button>
+        </div>
+        <button onClick={this.checkForOktaSession}>CHECK SESSION</button>
+        <button onClick={this.checkExpressSession}>CHECK EXPRESS SESSION</button>
+        <button onClick={this.logout}>LOGOUT</button>
       </div>
-    );
+    )
   }
 }
 
