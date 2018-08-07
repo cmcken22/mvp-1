@@ -26,9 +26,9 @@ class App extends Component {
       username: 'conner.mckenna94@gmail.com',
       password: 'Ellisdon2017'
     })
-    .then( async (transaction) => {
+    .then( (transaction) => {
       if (transaction.status == 'SUCCESS') {
-        authClient.session.setCookieAndRedirect(transaction.sessionToken, 'http://localhost:8080/login');
+        authClient.session.setCookieAndRedirect(transaction.sessionToken, `${baseUrl}/oauth2/default/v1/authorize?client_id=${client_id}&state=state-1234-1234-1243&response_type=code&scope=openid&redirect_uri=${redirect_uri}`);
       } else {
         console.log('login failed')
       }
@@ -57,15 +57,16 @@ class App extends Component {
   }
 
   checkExpressSession = () => {
-    fetch('/check', {credentials: 'same-origin', mode: 'cors'})
+    // this will log the current express session to the terminal
+    fetch('/check', {credentials: 'same-origin'})
   }
 
   render() {
     return (
       <div>
         <div>
+
           <button onClick={this.login}>LOGIN</button>
-          <a href='/login'> Log </a>
         </div>
         <button onClick={this.checkForOktaSession}>CHECK SESSION</button>
         <button onClick={this.checkExpressSession}>CHECK EXPRESS SESSION</button>
